@@ -64,38 +64,53 @@
             document.getElementById(id).style.display = 'block';
         }
 
+        function validateForm(data) {
+            return Object.values(data).every(value => value.trim() !== "");
+        }
+
         async function saveAd() {
             const ad = {
-                title: document.getElementById('title').value,
-                description: document.getElementById('description').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                price: document.getElementById('price').value,
-                username: document.getElementById('username').value
+                title: document.getElementById('title').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                price: document.getElementById('price').value.trim(),
+                username: document.getElementById('username').value.trim()
             };
+
+            if (!validateForm(ad)) {
+                alert("Όλα τα πεδία είναι υποχρεωτικά!");
+                return;
+            }
+
             await fetch(`${server_url}/add_ad`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ad)
             });
+
             document.getElementById('addAdForm').reset();
             loadAds();
         }
 
         async function loadAds() {
-            const response = await fetch(`${server_url}/view_ads`);
-            const ads = await response.json();
-            const adsList = document.getElementById('adsList');
-            adsList.innerHTML = ads.map(ad => `
-                <div class="ad">
-                    <h3>${ad.title}</h3>
-                    <p>${ad.description}</p>
-                    <p><strong>Τηλέφωνο:</strong> ${ad.phone}</p>
-                    <p><strong>Email:</strong> ${ad.email}</p>
-                    <p><strong>Τιμή:</strong> €${ad.price}</p>
-                    <button onclick="deleteAd(${ad.id})">Διαγραφή</button>
-                </div>
-            `).join('');
+            try {
+                const response = await fetch(`${server_url}/view_ads`);
+                const ads = await response.json();
+                const adsList = document.getElementById('adsList');
+                adsList.innerHTML = ads.map(ad => `
+                    <div class="ad">
+                        <h3>${ad.title}</h3>
+                        <p>${ad.description}</p>
+                        <p><strong>Τηλέφωνο:</strong> ${ad.phone}</p>
+                        <p><strong>Email:</strong> ${ad.email}</p>
+                        <p><strong>Τιμή:</strong> €${ad.price}</p>
+                        <button onclick="deleteAd(${ad.id})">Διαγραφή</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error("Σφάλμα φόρτωσης αγγελιών:", error);
+            }
         }
 
         async function deleteAd(adId) {
@@ -109,6 +124,11 @@
 
         async function searchAds() {
             const query = document.getElementById('searchQuery').value.toLowerCase();
+            if (query.trim() === "") {
+                alert("Παρακαλώ εισάγετε έναν όρο αναζήτησης.");
+                return;
+            }
+
             const response = await fetch(`${server_url}/search_ads?query=${query}`);
             const results = await response.json();
             document.getElementById('searchResults').innerHTML = results.map(ad => `
@@ -121,14 +141,21 @@
 
         async function saveAccount() {
             const account = {
-                username: document.getElementById('accountUsername').value,
-                email: document.getElementById('accountEmail').value
+                username: document.getElementById('accountUsername').value.trim(),
+                email: document.getElementById('accountEmail').value.trim()
             };
+
+            if (!validateForm(account)) {
+                alert("Όλα τα πεδία είναι υποχρεωτικά!");
+                return;
+            }
+
             await fetch(`${server_url}/create_account`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(account)
             });
+
             document.getElementById('accountForm').reset();
         }
     </script>
