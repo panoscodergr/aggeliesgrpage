@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ιστοσελίδα Αγγελιών</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        nav { margin-bottom: 20px; }
+        nav button { margin-right: 10px; padding: 10px 20px; background-color: #0078d7; color: white; border: none; cursor: pointer; }
+        nav button:hover { background-color: #005bb5; }
+        section, form { display: none; padding: 20px; background: white; border: 1px solid #ccc; border-radius: 5px; }
+        .ad { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .ad button { margin-left: 10px; padding: 5px; background-color: red; color: white; border: none; cursor: pointer; }
+        .ad button.edit { background-color: orange; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Ιστοσελίδα Αγγελιών</h1>
+    </header>
+    <nav>
+        <button onclick="showSection('adsSection'); loadAds()">Αγγελίες</button>
+        <button onclick="showSection('addAdForm')">Προσθήκη Αγγελίας</button>
+        <button onclick="showSection('searchForm')">Αναζήτηση</button>
+        <button onclick="showSection('accountForm')">Λογαριασμός</button>
+    </nav>
+
+    <section id="adsSection">
+        <h2>Αγγελίες</h2>
+        <div id="adsList"></div>
+    </section>
+
+    <form id="addAdForm">
+        <h2>Προσθήκη Αγγελίας</h2>
+        <input type="text" id="title" placeholder="Τίτλος" required><br>
+        <textarea id="description" placeholder="Περιγραφή" required></textarea><br>
+        <input type="text" id="phone" placeholder="Τηλέφωνο" required><br>
+        <input type="email" id="email" placeholder="Email" required><br>
+        <input type="number" id="price" placeholder="Τιμή" required><br>
+        <input type="text" id="username" placeholder="Όνομα Χρήστη" required><br>
+        <button type="button" onclick="saveAd()">Αποθήκευση</button>
+    </form>
+
+    <form id="searchForm">
+        <h2>Αναζήτηση Αγγελιών</h2>
+        <input type="text" id="searchQuery" placeholder="Αναζήτηση..." required><br>
+        <button type="button" onclick="searchAds()">Αναζήτηση</button>
+        <div id="searchResults"></div>
+    </form>
+
+    <form id="accountForm">
+        <h2>Διαχείριση Λογαριασμού</h2>
+        <input type="text" id="accountUsername" placeholder="Όνομα Χρήστη" required><br>
+        <input type="email" id="accountEmail" placeholder="Email" required><br>
+        <button type="button" onclick="saveAccount()">Αποθήκευση</button>
+    </form>
+
+    <script>
+        const server_url = "https://fork-medicines-varies-comic.trycloudflare.com";
+
+        function showSection(id) {
+            document.querySelectorAll('section, form').forEach(el => el.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+        }
+
+        async function saveAd() {
+            const ad = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                price: document.getElementById('price').value,
+                username: document.getElementById('username').value
+            };
+            await fetch(`${server_url}/add_ad`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ad)
+            });
+            document.getElementById('addAdForm').reset();
+            loadAds();
+        }
+
+        async function loadAds() {
+            const response = await fetch(`${server_url}/view_ads`);
+            const ads = await response.json();
+            const adsList = document.getElementById('adsList');
+            adsList.innerHTML = ads.map(ad => `
+                <div class="ad">
+                    <h3>${ad.title}</h3>
+                    <p>${ad.description}</p>
+                    <p><strong>Τηλέφωνο:</strong> ${ad.phone}</p>
+                    <p><strong>Email:</strong> ${ad.email}</p>
+                    <p><strong>Τιμή:</strong> €${ad.price}</p>
+                    <button onclick="deleteAd(${ad.id})">Διαγραφή</button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteAd(adId) {
+            await fetch(`${server_url}/delete_ad`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: adId })
+            });
+            loadAds();
+        }
+
+        async function searchAds() {
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            const response = await fetch(`${server_url}/search_ads?query=${query}`);
+            const results = await response.json();
+            document.getElementById('searchResults').innerHTML = results.map(ad => `
+                <div class="ad">
+                    <h3>${ad.title}</h3>
+                    <p>${ad.description}</p>
+                </div>
+            `).join('');
+        }
+
+        async function saveAccount() {
+            const account = {
+                username: document.getElementById('accountUsername').value,
+                email: document.getElementById('accountEmail').value
+            };
+            await fetch(`${server_url}/create_account`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(account)
+            });
+            document.getElementById('accountForm').reset();
+        }
+    </script>
+</body>
+</html>
